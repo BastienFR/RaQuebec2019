@@ -1,0 +1,73 @@
+.list-group-item.active, .list-group-item.active:focus, .list-group-item.active:hover {
+    background-color: #008c53;
+}
+
+body .main-container {
+max-width: 1800px;
+}
+
+h1 { /* Header 1 */
+font-size: 28px;
+color: #008c53;
+font-family: Calibri, Helvetica, sans-serif;
+}
+h2 { 
+font-size: 22px;
+color: #008c53;
+font-family: Calibri, Helvetica, sans-serif;
+}
+
+h3 { 
+font-size: 18px;
+color: #008c53;
+font-family: Calibri, Helvetica, sans-serif;
+}
+
+p {
+font-family: Calibri, Helvetica, sans-serif; 
+}
+
+.remark-slide {
+font-family: Calibri, Helvetica, sans-serif; 
+color: #383838;
+}
+
+
+.title-slide {
+  background-image: url("images/logo_desjardins_long.png");
+  background-size: 250px;
+  padding-top: 40px !important;
+  background-repeat: no-repeat;
+  background-position: 95% 5%
+}
+
+
+code.r{
+  font-size: 16px;
+}
+
+pre {
+  font-size: 16px;
+  background-color: #C7DD70;
+}
+
+pre.r {
+  font-size: 16px;
+}
+
+
+code.r.hljs.remark-code {
+  background-color: #DCE9A8;
+}
+
+
+.content-box-desj {
+    border-radius: 15px;
+    margin: 0 0 5px;
+    overflow: hidden;
+    padding: 4px;
+    width: 100%;
+    background-color: #C7DD70;
+}
+
+
