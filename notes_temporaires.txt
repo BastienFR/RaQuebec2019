@@ -1,0 +1,4 @@
+communauté-urbaine de québec: https://www.donneesquebec.ca/recherche/fr/dataset/vque_56
+districts électoraux: https://www.donneesquebec.ca/recherche/fr/dataset/vque_43
+mosaique_landsat: https://www.donneesquebec.ca/recherche/fr/dataset/mosaique-landsat
+DEM: http://ftp.geogratis.gc.ca/pub/nrcan_rncan/elevation/cdem_mnec/021/
