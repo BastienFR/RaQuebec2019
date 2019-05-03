@@ -567,12 +567,7 @@ Cette méthode de travailler n'est pas parfaite:
   -  `paste`, `paste0` : Concaténer de chaines de caractères
   -  etc.
 
---
-<div id="overlay">
-.content-box-desj[
-  .center[.Large[.bold[Si R est trop lent, incomplet, pas exactement ce que vous avez besoin, n'hésitez pas et aller voir ailleurs!]]]
-]
-</div>
+
 
 ---
 class: center, bottom

@@ -75,13 +75,5 @@ code.r.hljs.remark-code {
   margin-bottom: 1px;
 }
 
-.overlay{
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 10;
-}
 
 
