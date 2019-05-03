@@ -1,15 +1,13 @@
 ---
-title: "Un logiciel pour les gouverner tous et dans l’analyse spatiale les lier"
-author: "Bastien Ferland-Raymond"
-institute: "Desjardins Assurances Générales"
-date: "15 mai 2019"
 output:
   xaringan::moon_reader:
     lib_dir: libs
+    self_contained: no
     nature:
       highlightStyle: github
       highlightLines: true
       countIncrementalSlides: false
+      ratio: "16:9"
     css: ["default", "styles.css", "hygge"]
 ---
 
@@ -25,6 +23,13 @@ set_env("C:/OSGeo4W64")
 qgis_session_info()
 ```
 
+
+background-image: url("images/title1b.PNG")
+background-size: cover
+
+
+---
+
 ## Introduction
 
 .large[
@@ -33,8 +38,8 @@ qgis_session_info()
 - Il est paramétrable, mais il manque parfois certaines options...
 ]
 
-```{r, out.height="400px", echo=F}
-knitr::include_graphics("images/R_BIND.png")
+```{r, fig.align="center", out.width="750px", echo=F}
+knitr::include_graphics("images/R_BIND.png")  
 ```
 
 ---
@@ -56,6 +61,8 @@ knitr::include_graphics("images/R_BIND.png")
 
 Par défaut, on a tendance à tout remettre en `data.frame` lorsqu'on travail en R.  C'est facile, il y a une tonne d'outils et on est habitué. Cependant, ce n'est pas toujours approprié.
 
+--
+
 Basé sur une histoire vrai.
 
 J'hérite d'un code qui doit appliquer différentes opérations sur des rasters:
@@ -63,6 +70,10 @@ J'hérite d'un code qui doit appliquer différentes opérations sur des rasters:
 -  Substituer certaines valeurs qui respecte une règle précise,
 -  Multiplier des valeurs,
 -  Appliquer un modèle
+
+
+--
+
 
 ```{r eval=FALSE}
 le.raster <- raster(r, layer=8)
@@ -85,9 +96,83 @@ Plutôt, tout faire en raster grâce aux outils tels:
 -  calculatrice raster
 -  reclassification
 
+Exemple d'un calcul NDVI<sup>1</sup>:
+
+```{r prep_landsat, echo=T, warning=FALSE, message=F}
+library(raster)
+library(magrittr)
+library(here)
+library(dplyr)
+
+## raster
+base.rast <- list.files(here("data/landsat/nord"),
+                        pattern = ".TIF$", 
+                        full.names = T) %>% 
+  grep("B2|B3|B4|B5",., value = T)
+
+ras.brut.ras <- stack(base.rast)
+```
+
+.footnote[[1] Image Landsat OLI-8 du path 013 row 027 le 06-09-2016 disponible sur [earthexplorer](https://earthexplorer.usgs.gov/) ]
+
+---
+
+## Pensez spatial!
+
+.pull-left[En `data.frame`
+```{r ndvi-dplyr, cache=T}
+pryr::mem_change({
+  df_ras <- values(ras.brut.ras[[2:3]]) %>% 
+    as.data.frame() %>% 
+    setNames(c("B3", "B4"))
+
+  df_NDVI <- mutate(df_ras, ndvi = (B4-B3)/(B4+B3))
+  
+  df_cla_NDVI <- mutate(df_NDVI, cla = cut(ndvi, seq(-1,1,0.2)),
+                        cla = as.numeric(cla))
+})
+```
+
+]
 --
 
-Gain de plus de 10x en vitesse avec pratiquement pas de RAM nécessaire! 
+.pull-right[En `raster`
+```{r ndvi-raster, cache=T, warnings=F, message=F}
+rasterOptions(maxmemory=5e+06) # pour forcer le raster sur disque
+
+pryr::mem_change({
+  NDVI <- (ras.brut.ras[[3]] - ras.brut.ras[[2]]) / (ras.brut.ras[[3]] + ras.brut.ras[[2]])
+
+  clas_mat <- cbind(from = seq(-1, 0.8, .2),
+                    to = seq(-0.8, 1, .2),
+                    become = 1:10)
+  
+  cla_NDVI <- reclassify(NDVI, clas_mat,
+                         filename = "temp_files/ndvi_ras.tif",
+                         overwrite = TRUE)
+})
+```
+]
+
+---
+
+## Pensez spatial!
+
+.pull-left[En `data.frame`
+```{r ndvi-plot-dplyr, message=F}
+cla_NDVI_dplyr <- NDVI
+values(cla_NDVI_dplyr) <- df_cla_NDVI$cla
+plot(cla_NDVI_dplyr, main = "dplyr")
+```
+
+]
+
+.pull-right[En `raster`
+```{r ndvi-plot-raster, message=F}
+plot(cla_NDVI, main = "raster")
+```
+]
+
 
 ---
 
@@ -95,26 +180,18 @@ Gain de plus de 10x en vitesse avec pratiquement pas de RAM nécessaire!
 
 Le package `raster` est un excellent package avec une tonne d'outils et de fonctionnalité.  Il est intuitif et facile à utiliser.  Je le conseil fortement.  Cependant, il peut parfois être très lent et non efficace.
 
-Exemple de reprojection d'une image landsat<sup>1</sup>:
+Exemple de reprojection d'une image landsat:
 
 
-```{r, warning=F, message=F}
-library(magrittr)
-library(here)
+```{r prep-lim-raster, warning=F, message=F}
 library(tictoc)
 
 tocOutMsg <- function(tic, toc, msg) paste(msg, " : ", round(toc - tic), " sec", sep="")
-
-base.rast <- list.files("data/landsat/nord",
-                        pattern = ".TIF$", 
-                        full.names = T) %>% 
-  grep("B2|B3|B4|B5",., value = T)
 
 epsg32198 <- "+proj=lcc +lat_1=60 +lat_2=46 +lat_0=44 +lon_0=-68.5 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs"
 
 ```
 
-.footnote[[1] Image Landsat OLI-8 du path 013 row 027 le 06-09-2016 disponible sur [earthexplorer](https://earthexplorer.usgs.gov/) ]
 
 ---
 
@@ -124,12 +201,14 @@ epsg32198 <- "+proj=lcc +lat_1=60 +lat_2=46 +lat_0=44 +lon_0=-68.5 +x_0=0 +y_0=0
 
 
 .pull-left[Avec le package `raster`
-```{r, warning=F, message=FALSE, cache=T}
+```{r ras-lim-raster, warning=F, message=FALSE, cache=T}
 library(raster)
 ras.brut.ras <- stack(base.rast)
 tic("Temps total Raster")
 ras.32198.ras <- projectRaster(ras.brut.ras,
-                               crs = CRS(epsg32198))
+                               crs = CRS(epsg32198),
+                               filename = "temp_files/ras_reproj.tif",
+                               overwrite = T)
 toc(func.toc = tocOutMsg)
 ```
 ]
@@ -137,7 +216,7 @@ toc(func.toc = tocOutMsg)
 --
 
 .pull-right[Avec le package `gdalUtils`
-```{r, warning=F, message=FALSE, cache=T}
+```{r util-lim-raster, warning=F, message=FALSE, cache=T}
 library(gdalUtils)
 tic("Temps total gdalUtils")
 for(i in base.rast){
@@ -152,6 +231,14 @@ toc(func.toc = tocOutMsg)
 ```
 ]
 
+--
+
+```{r msg-lim-raster, echo=T, eval=F}
+'C:\\OSGeo4W64\\bin\\gdalwarp.exe' -overwrite  -t_srs '+proj=lcc +lat_1=60 +lat_2=46 +lat_0=44 +lon_0=-68.5 +x_0=0 +y_0=0
++ellps=GRS80 +datum=NAD83 +units=m +no_defs' -of 'GTiff' 'data/landsat/nord/LC08_L1TP_013027_20160906_20170221_01_T1_B5.TIF
+'C:/Users/DXD9163/Desktop/RaQuebec/temp_files/LC08_L1TP_013027_20160906_20170221_01_T1_B5.TIF'
+```
+
 
 ---
 
@@ -161,7 +248,7 @@ toc(func.toc = tocOutMsg)
 
 
 .pull-left[Avec le package `raster`
-```{r, warning=F, message=FALSE, cache=T}
+```{r reechan-raster, warning=F, message=FALSE, cache=T}
 tic("Temps total Raster")
 gabarit <- raster(nrows=12169, ncols=12007,
                   xmn=-295600, xmx=-55460,
@@ -182,7 +269,7 @@ toc(func.toc = tocOutMsg)
 --
 
 .pull-right[Avec le package `gdalUtils`
-```{r, warning=F, message=FALSE, cache=T}
+```{r reechan-utils, warning=F, message=FALSE, cache=T}
 tic("Temps total gdalUtils")
 for(i in base.rast){
   gdalwarp(srcfile = i,
@@ -209,8 +296,11 @@ Si l'application existe en R, parfois une autre version existe ailleurs.
 
 Exemple de la simplification de shapefile<sup>1</sup>
 
+.footnote[[1] Unités d'Aménagements forestières obtenues sur [Données Québec](https://www.donneesquebec.ca/recherche/fr/dataset/unite-d-amenagement/resource/99aa6dd4-ef2c-49e9-a472-77e383eed538])
+
+
 .pull-left[Simplification de polygones en R:
-```{r, eval = F}
+```{r simpl_sf, eval = F}
 ua <- st_read("data/UNITE_AMENAGEMENT.shp") %>% 
   st_transform(32198)
 
@@ -221,7 +311,7 @@ ua_simple <- st_simplify(ua, dTolerance = 10)
 --
 
 .pull-right[Ou en GRASS à travers QGIS
-```{r, eval = F}
+```{r simpl_grass, eval = F}
 library("RQGIS3")
 set_env("C:/OSGeo4W64")
 qgis_session_info()
@@ -240,7 +330,6 @@ ua_simple_rqgis <-
 ```
 ]
 
-.footnote[[1] Unités d'Aménagements forestières obtenues sur [Données Québec](https://www.donneesquebec.ca/recherche/fr/dataset/unite-d-amenagement/resource/99aa6dd4-ef2c-49e9-a472-77e383eed538])
 
 ---
 
@@ -260,7 +349,7 @@ knitr::include_graphics("images/methods_generalize.PNG")
 
 ## Si ce n'est pas disponible en R
 
-```{r, echo=F, fig.align="center"}
+```{r, echo=F, fig.align="center", out.width="750px"}
 knitr::include_graphics("images/question_catchment_R.PNG")
 ```
 
@@ -271,7 +360,7 @@ knitr::include_graphics("images/question_catchment_R.PNG")
 
 Répondons à la question et faisons un bassin versant pour la rivière Sainte-Anne-du-Nord à Beaupré<sup>1</sup>. 
 
-```{r, message=F, warning=F, results=F, , cache=T}
+```{r water-grass, message=F, warning=F, results=F, , cache=T}
 gdal_translate(here("data", "cdem_dem_021M.tif"),
                here("temp_files", "dem_temp.tif"),
                projwin = c(-71.2, 47.5, -70.5, 47))
@@ -298,7 +387,7 @@ bassin_grass <- run_qgis(alg = "grass7:r.water.outlet",
 
 ## Si ce n'est pas disponible en R
 
-```{r, message=F, warning=F, out.height="400px"}
+```{r leaflet-grass, message=F, warning=F, out.height="400px", cache=T}
 library(leaflet)
 leaflet(width = "100%") %>% addTiles() %>%
   addRasterImage(bassin_grass,  opacity = 0.5)
@@ -309,7 +398,7 @@ leaflet(width = "100%") %>% addTiles() %>%
 
 ## Pas satisfait, faite le en SAGA!
 
-```{r, message=F, warning=F, results="hide", cache=T, comment=FALSE, error=FALSE}
+```{r water-saga, message=F, warning=F, results="hide", cache=T, comment=FALSE, error=FALSE}
 library(RSAGA)
 
 rsaga.fill.sinks(in.dem = here("temp_files", "dem_temp.tif"), 
@@ -327,7 +416,7 @@ bassin_saga[bassin_saga!=1307] <- NA
 
 ## Pas satisfait, faite le en SAGA!
 
-```{r, message=F, warning=F, out.height="400px"}
+```{r leaflet-saga, message=F, warning=F, out.height="400px", cache=T}
 leaflet(width = "100%") %>% addTiles() %>%
   addRasterImage(bassin_saga, color="blue", opacity = 0.5)
 ```
@@ -344,7 +433,7 @@ Si un logiciel que vous voulez utiliser a un CLI (interface de commande), vous p
 Exemple d'analyse de vent avec Wind Ninja (https://weather.firelab.org/windninja/)
 
 
-```{r, echo=F, out.width = "500px", fig.align="center"}
+```{r, echo=F, out.width = "600px", fig.align="center"}
 knitr::include_graphics("https://raw.githubusercontent.com/firelab/windninja/master/images/bsb.jpg")
 ```
 
@@ -389,7 +478,7 @@ wind_ninja <- function(num_threads=1, elevation_file, input_speed, input_speed_u
 
 ## R appelle la console
 
-```{r, message=F, warning=F, results=F, cache=T, comment=FALSE}
+```{r run-wind-ninja, message=F, warning=F, results=F, cache=T, comment=FALSE}
 gdalwarp(here("temp_files", "dem_temp.tif"),
          here("temp_files", "dem_temp_32198.tif"),
          t_srs = epsg32198, 
@@ -462,6 +551,9 @@ Cette méthode de travailler n'est pas parfaite:
   -  `RSAGA` : Pour le matriciel et le vectoriel, simple, sans droit d'administrateur,
   -  `RGRASS7` : Compliqué mais une option de plus,
   -  Function `system` : Pour tout autre lien, spatial ou non.
+--
+
+  -  `PostGIS`: À l'aide de `sf` ou `rpostgis`!
 
 --
 
@@ -476,11 +568,37 @@ Cette méthode de travailler n'est pas parfaite:
   -  etc.
 
 --
-
+<div id="overlay">
 .content-box-desj[
   .center[.Large[.bold[Si R est trop lent, incomplet, pas exactement ce que vous avez besoin, n'hésitez pas et aller voir ailleurs!]]]
 ]
+</div>
 
 ---
+class: center, bottom
 
-## Merci!
+
+
+```{r, echo=F, warning=F, message=FALSE, cache=T, out.width="550px"}
+knitr::include_graphics("images/merci.PNG")
+```
+
+<br>
+<br>
+<br>
+<br>
+
+.pull-left[
+```{r, echo=F, warning=F, message=FALSE, cache=T, out.width="300px"}
+knitr::include_graphics("images/logo_r_a_quebec_2019.png")
+```
+]
+
+
+
+.pull-right[
+```{r, echo=F, warning=F, message=FALSE, cache=T, out.width="300px"}
+knitr::include_graphics("images/logo_desjardins_long.png")
+```
+]
+
