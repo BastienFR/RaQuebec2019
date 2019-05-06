@@ -21,6 +21,7 @@ library(gdalUtils)
 library(RQGIS3)
 set_env("C:/OSGeo4W64")
 qgis_session_info()
+
 ```
 
 
@@ -54,8 +55,8 @@ knitr::include_graphics("images/R_BIND.png")
 - Conclusion
 ]
 
-
 ---
+
 
 ## Pensez spatial!
 
@@ -63,7 +64,7 @@ Par défaut, on a tendance à tout remettre en `data.frame` lorsqu'on travail en
 
 --
 
-Basé sur une histoire vrai.
+Basé sur une histoire vraie.
 
 J'hérite d'un code qui doit appliquer différentes opérations sur des rasters:
 -  Filtrer les valeurs,
@@ -126,9 +127,8 @@ pryr::mem_change({
     as.data.frame() %>% 
     setNames(c("B3", "B4"))
 
-  df_NDVI <- mutate(df_ras, ndvi = (B4-B3)/(B4+B3))
-  
-  df_cla_NDVI <- mutate(df_NDVI, cla = cut(ndvi, seq(-1,1,0.2)),
+  df_cla_NDVI <- mutate(df_ras, ndvi = (B4-B3)/(B4+B3),
+                        cla = cut(ndvi, seq(-1,1,0.2)),
                         cla = as.numeric(cla))
 })
 ```
@@ -141,7 +141,8 @@ pryr::mem_change({
 rasterOptions(maxmemory=5e+06) # pour forcer le raster sur disque
 
 pryr::mem_change({
-  NDVI <- (ras.brut.ras[[3]] - ras.brut.ras[[2]]) / (ras.brut.ras[[3]] + ras.brut.ras[[2]])
+  NDVI <- (ras.brut.ras[[3]] - ras.brut.ras[[2]]) /
+          (ras.brut.ras[[3]] + ras.brut.ras[[2]])
 
   clas_mat <- cbind(from = seq(-1, 0.8, .2),
                     to = seq(-0.8, 1, .2),
@@ -159,7 +160,7 @@ pryr::mem_change({
 ## Pensez spatial!
 
 .pull-left[En `data.frame`
-```{r ndvi-plot-dplyr, message=F}
+```{r ndvi-plot-dplyr, message=F, fig.width=6, fig.height=6, fig.align="center"}
 cla_NDVI_dplyr <- NDVI
 values(cla_NDVI_dplyr) <- df_cla_NDVI$cla
 plot(cla_NDVI_dplyr, main = "dplyr")
@@ -168,7 +169,9 @@ plot(cla_NDVI_dplyr, main = "dplyr")
 ]
 
 .pull-right[En `raster`
-```{r ndvi-plot-raster, message=F}
+```{r ndvi-plot-raster, message=F, fig.width=6, fig.height=6, fig.align="center"}
+#
+
 plot(cla_NDVI, main = "raster")
 ```
 ]
@@ -301,6 +304,7 @@ Exemple de la simplification de shapefile<sup>1</sup>
 
 .pull-left[Simplification de polygones en R:
 ```{r simpl_sf, eval = F}
+library(sf)
 ua <- st_read("data/UNITE_AMENAGEMENT.shp") %>% 
   st_transform(32198)
 
@@ -515,11 +519,11 @@ vectorplot(stack(speed, ang), unit = 'degrees', isField=T, xlim=c(-189000,-18600
 
 ## Inconvénients
 
-Cette méthode de travailler n'est pas parfaite:
+Cette méthode de travail n'est pas parfaite:
 
 --
 
--  Créé plusieurs fichiers temporaires plutôt de travailler en mémoire comme R
+-  Créé plusieurs fichiers temporaires plutôt que de travailler en mémoire comme R
 
 --
 
@@ -580,6 +584,7 @@ knitr::include_graphics("images/merci.PNG")
 
 <br>
 <br>
+.center[ Présentation disponible sur: https://bastienfr.github.io/RaQuebec2019/ruling_software_bfr_raquebec.html]
 <br>
 <br>
 

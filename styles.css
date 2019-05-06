@@ -27,7 +27,11 @@ font-family: 'Droid Serif';
 }
 
 p {
-font-family: 'Droid Serif'; 
+  font-family: 'Droid Serif'; 
+}
+
+.img {
+  margin-top:0.1em;
 }
 
 .remark-slide {
@@ -39,6 +43,12 @@ font-family: 'Droid Serif';
 
 .hljs-github{
   font-size: 25px;
+}
+
+
+pre {
+  margin-block-start: 0.8em;
+  margin-block-end: 0.3em;
 }
 
 code.r{
