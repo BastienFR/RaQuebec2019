@@ -181,9 +181,9 @@ plot(cla_NDVI, main = "raster")
 
 ## Les limites du package raster
 
-Le package `raster` est un excellent package avec une tonne d'outils et de fonctionnalité.  Il est intuitif et facile à utiliser.  Je le conseil fortement.  Cependant, il peut parfois être très lent et non efficace.
+Le package `raster` est un excellent package avec une tonne d'outils et de fonctionnalité.  Il est intuitif et facile à utiliser.  Je le conseille fortement.  Cependant, il peut parfois être très lent et non efficace.
 
-Exemple de reprojection d'une image landsat:
+Exemple de reprojection d'une image landsat :
 
 
 ```{r prep-lim-raster, warning=F, message=F}
